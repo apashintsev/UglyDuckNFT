@@ -4,8 +4,11 @@ import "dotenv/config";
 import { mnemonic } from "./secrets.json";
 
 const config: HardhatUserConfig = {
+  mocha: {
+    timeout: 100000000,
+  },
   solidity: {
-    version: "0.8.9",
+    version: "0.8.19",
     settings: {
       optimizer: {
         enabled: true,

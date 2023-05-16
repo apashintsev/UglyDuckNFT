@@ -1,60 +1,111 @@
 import hre, { ethers } from "hardhat";
 import { BNFT, Operator } from "../typechain-types/contracts";
 import deployContract from "./deployContractHelper";
+import {
+  BNFT__factory,
+  Mixer__factory,
+  Operator__factory,
+} from "../typechain-types/factories/contracts";
 
 async function main() {
   const deployerAddress = "0x9efE3B3d2C516970B902364444411103d077160D";
+  const stackingAddress = "0x78E4cc313C7ECdD2f86C0A3ac9AbeD26FCcFfF70";
   const accounts = await ethers.getSigners();
   const deployer = accounts.find((x) => x.address == deployerAddress);
 
   console.log("Deploying contracts with the account:", deployer?.address);
 
-  const nft = await deployContract<BNFT>(
-    "BNFT",
+  const tud = await new BNFT__factory(deployer).deploy(
     deployer!.address,
     deployer!.address,
     "TEST",
     "TEST",
-    "TEST"
+    "TUD"
   );
+  await tud.deployed();
 
-  await nft.deployed();
-  console.log("Token deployed to:", nft.address);
-  const operator = await deployContract<Operator>(
-    "Operator",
-    nft!.address,
-    "0x78E4cc313C7ECdD2f86C0A3ac9AbeD26FCcFfF70"
+  const tudsy = await new BNFT__factory(deployer).deploy(
+    deployer!.address,
+    deployer!.address,
+    "TEST",
+    "TEST",
+    "TUDSY"
   );
+  await tudsy.deployed();
+  console.log("Token TUD deployed to:", tud.address);
 
+  const operator = await new Operator__factory(deployer).deploy(
+    tud!.address,
+    stackingAddress
+  );
   await operator.deployed();
-  console.log("Token deployed to:", operator.address);
+
+  const mixer = await new Mixer__factory(deployer).deploy(
+    tud.address,
+    tudsy.address,
+    operator.address,
+    stackingAddress
+  );
+  await mixer.deployed();
+
+  console.log("Token TUDSY deployed to:", operator.address);
   try {
     await hre.run("verify:verify", {
-      address: nft.address,
+      address: tud.address,
       contract: "contracts/BNFT.sol:BNFT",
       constructorArguments: [
         deployer!.address,
         deployer!.address,
         "TEST",
         "TEST",
-        "TEST",
+        "TUD",
       ],
     });
   } catch (e) {
     console.log(e);
   }
-  /*try {
+  console.log("Token deployed to:", operator.address);
+  try {
+    await hre.run("verify:verify", {
+      address: tudsy.address,
+      contract: "contracts/BNFT.sol:BNFT",
+      constructorArguments: [
+        deployer!.address,
+        deployer!.address,
+        "TEST",
+        "TEST",
+        "TUDSY",
+      ],
+    });
+  } catch (e) {
+    console.log(e);
+  }
+  try {
     await hre.run("verify:verify", {
       address: operator.address,
       contract: "contracts/Operator.sol:Operator",
       constructorArguments: [
-        nft!.address,
+        tud!.address,
         "0x78E4cc313C7ECdD2f86C0A3ac9AbeD26FCcFfF70",
       ],
     });
   } catch (e) {
     console.log(e);
-  }*/
+  }
+  try {
+    await hre.run("verify:verify", {
+      address: mixer.address,
+      contract: "contracts/Mixer.sol:Mixer",
+      constructorArguments: [
+        tud.address,
+        tudsy.address,
+        operator.address,
+        stackingAddress,
+      ],
+    });
+  } catch (e) {
+    console.log(e);
+  } /**/
 }
 
 // We recommend this pattern to be able to use async/await everywhere

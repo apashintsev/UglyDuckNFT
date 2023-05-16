@@ -42,17 +42,17 @@ describe("Operator tests", () => {
       deploy
     );
 
-    const txMint = await nft.mint(user1.address, 20);
+    const txMint = await nft.mint(user1.address, 200);
     await txMint.wait();
 
-    expect(await nft.balanceOf(user1.address)).equals(20);
+    expect(await nft.balanceOf(user1.address)).equals(200);
 
     const txApprove = await nft
       .connect(user1)
       .setApprovalForAll(operator.address, true);
     await txApprove.wait();
 
-    const txStake = await operator.connect(user1).stake(11);
+    const txStake = await operator.connect(user1).stake(50);
     await txStake.wait();
 
     const newBalance = await nft.balanceOf(user1.address);
