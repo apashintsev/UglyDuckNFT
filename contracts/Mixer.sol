@@ -87,7 +87,6 @@ contract Mixer is Ownable {
             mixed[msg.sender].push(
                 MixItem(tudsyId, tuds[tudStartIndex + i].nftId, egg)
             );
-            //eggs[msg.sender].push(egg);
             emit Mixed(msg.sender, tuds[tudStartIndex + i].nftId, tudsyId, egg);
             unchecked {
                 ++i;
