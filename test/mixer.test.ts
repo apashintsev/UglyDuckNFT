@@ -42,7 +42,21 @@ describe("Mixer tests", () => {
       stacking.address
     );
     await mixer.deployed();
+    await(await tud.mint(user1.address, 50)).wait();
 
+    const txApproveTud = await tud
+      .connect(user1)
+      .setApprovalForAll(operator.address, true);
+    await txApproveTud.wait();
+    await(await tudsy.mint(user1.address, 15)).wait();
+    const txApproveTudsy = await tudsy
+      .connect(user1)
+      .setApprovalForAll(mixer.address, true);
+    await txApproveTudsy.wait();
+    const txApproveTudFm = await tud
+      .connect(user1)
+      .setApprovalForAll(mixer.address, true);
+    await txApproveTudFm.wait();
     return {
       tud,
       tudsy,
@@ -66,16 +80,10 @@ describe("Mixer tests", () => {
       mixer,
     } = await loadFixture(deploy);
 
-    await (await tud.mint(user1.address, 10)).wait();
 
-    const txApproveTud = await tud
-      .connect(user1)
-      .setApprovalForAll(operator.address, true);
-    await txApproveTud.wait();
+    await (await operator.connect(user1).stake(5)).wait();
 
-    await (await operator.connect(user1).stake(10)).wait();
-
-    const newBalance = await tud.balanceOf(user1.address);
+    //const newBalance = await tud.balanceOf(user1.address);
     //console.log({ newBalance });
     /*for (let i = 0; i < newBalance.toNumber(); i++) {
       const tokenId = (
@@ -84,28 +92,20 @@ describe("Mixer tests", () => {
       console.log({ tokenId });
     }*/
 
-    const stakedBalance = await operator.stakingBalance(user1.address);
+    //const stakedBalance = await operator.stakingBalance(user1.address);
     //console.log({ stakedBalance });
 
-    await (await tudsy.mint(user1.address, 10)).wait();
-    const txApproveTudsy = await tudsy
-      .connect(user1)
-      .setApprovalForAll(mixer.address, true);
-    await txApproveTudsy.wait();
-    const txApproveTudFm = await tud
-      .connect(user1)
-      .setApprovalForAll(mixer.address, true);
-    await txApproveTudFm.wait();
 
-    await (await mixer.connect(user1).mix(10)).wait();
+
+    await (await mixer.connect(user1).mix2(6)).wait();
     console.log("eggs");
-
+/*
     const mixed = await mixer.getMixedTokens(user1.address);
     console.log({ mixed });
 
     const balanceTudsyAfterMixing  = await tudsy.balanceOf(user1.address)
     console.log({balanceTudsyAfterMixing})
-    /*const eggs = await mixer.getEggs(user1.address);
+    const eggs = await mixer.getEggs(user1.address);
     for (let i = 0; i < eggs.length; i++) {
       const eggType = eggs[i];
       console.log({ eggType });

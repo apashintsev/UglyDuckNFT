@@ -39,6 +39,7 @@ async function main() {
     stackingAddress
   );
   await operator.deployed();
+  console.log("Operator deployed to:", operator.address);
 
   const mixer = await new Mixer__factory(deployer).deploy(
     tud.address,
@@ -47,8 +48,8 @@ async function main() {
     stackingAddress
   );
   await mixer.deployed();
-
   console.log("Token TUDSY deployed to:", operator.address);
+  
   try {
     await hre.run("verify:verify", {
       address: tud.address,
@@ -64,7 +65,7 @@ async function main() {
   } catch (e) {
     console.log(e);
   }
-  console.log("Token deployed to:", operator.address);
+
   try {
     await hre.run("verify:verify", {
       address: tudsy.address,

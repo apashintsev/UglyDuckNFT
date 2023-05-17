@@ -5,6 +5,8 @@ import "./BNFT.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import {Operator} from "./Operator.sol";
 
+//import "hardhat/console.sol";
+
 ///@title Mixer
 ///@notice Contract for transfer NFTs from user to staking address
 contract Mixer is Ownable {
@@ -56,14 +58,18 @@ contract Mixer is Ownable {
     function mix(uint256 count) external {
         uint256 tudStakedCount = operator.stakingBalance(msg.sender) -
             mixed[msg.sender].length;
-        if (count > tudStakedCount) {
+        uint256 tudOnWallet = tud.balanceOf(msg.sender);
+        if (count > tudStakedCount + tudOnWallet) {
             revert("Not enought TUD");
         }
         if (count > tudsy.balanceOf(msg.sender)) {
             revert("Not enought TUDSY");
         }
+        uint256 addFromWalletCount = count > tudStakedCount
+            ? count - tudStakedCount
+            : 0;
         Operator.StakeItem[] memory tuds = operator.getStakedTokens(msg.sender);
-        _mix(count, tuds, mixed[msg.sender].length);
+        _mix(count, tuds, mixed[msg.sender].length, addFromWalletCount);
     }
 
     ///@notice This function is calling  when user wants mix their TUD and TUDSY NFTs
@@ -73,23 +79,47 @@ contract Mixer is Ownable {
     function _mix(
         uint256 count,
         Operator.StakeItem[] memory tuds,
-        uint256 tudStartIndex
+        uint256 tudStartIndex,
+        uint256 tudFromWallet
     ) private {
         if (mixed[msg.sender].length == 0) {
             mixers.push(msg.sender);
         }
-        uint256 idx = uint256(keccak256(abi.encodePacked(block.timestamp)));
-        for (uint32 i = 0; i < count; ) {
-            idx = idx % tudsy.balanceOf(msg.sender);
+
+        for (uint16 i = 0; i < count; ) {
+            uint256 idx = uint256(
+                keccak256(abi.encodePacked(block.timestamp))
+            ) % tudsy.balanceOf(msg.sender);
             uint256 tudsyId = tudsy.tokenOfOwnerByIndex(msg.sender, idx);
             tudsy.transferFrom(msg.sender, staking, tudsyId);
-            EggType egg = getEgg(idx+i+tudsyId+tuds[tudStartIndex + i].nftId);
+            EggType egg = getEgg(i + tudsyId + tuds[tudStartIndex + i].nftId);
             mixed[msg.sender].push(
                 MixItem(tudsyId, tuds[tudStartIndex + i].nftId, egg)
             );
             emit Mixed(msg.sender, tuds[tudStartIndex + i].nftId, tudsyId, egg);
             unchecked {
                 ++i;
+            }
+        }
+        if (tudFromWallet > 0) {
+            for (uint16 i = 0; i < tudFromWallet; ) {
+                uint256 idx = uint256(
+                    keccak256(abi.encodePacked(block.timestamp))
+                );
+                uint256 idxTudsy = idx % tudsy.balanceOf(msg.sender);
+                uint256 tudsyId = tudsy.tokenOfOwnerByIndex(
+                    msg.sender,
+                    idxTudsy
+                );
+                tudsy.transferFrom(msg.sender, staking, tudsyId);
+                uint256 tudId = tudsy.tokenOfOwnerByIndex(msg.sender, 0);
+                tud.transferFrom(msg.sender, staking, tudId);
+                EggType egg = getEgg(i + tudsyId + tudId);
+                mixed[msg.sender].push(MixItem(tudsyId, tudId, egg));
+                emit Mixed(msg.sender, tudId, tudsyId, egg);
+                unchecked {
+                    ++i;
+                }
             }
         }
     }
