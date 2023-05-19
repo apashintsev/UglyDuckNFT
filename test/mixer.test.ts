@@ -42,13 +42,13 @@ describe("Mixer tests", () => {
       stacking.address
     );
     await mixer.deployed();
-    await(await tud.mint(user1.address, 50)).wait();
+    await (await tud.mint(user1.address, 50)).wait();
 
     const txApproveTud = await tud
       .connect(user1)
       .setApprovalForAll(operator.address, true);
     await txApproveTud.wait();
-    await(await tudsy.mint(user1.address, 15)).wait();
+    await (await tudsy.mint(user1.address, 45)).wait();
     const txApproveTudsy = await tudsy
       .connect(user1)
       .setApprovalForAll(mixer.address, true);
@@ -80,8 +80,9 @@ describe("Mixer tests", () => {
       mixer,
     } = await loadFixture(deploy);
 
-
-    await (await operator.connect(user1).stake(5)).wait();
+    await(
+      await operator.connect(user1).stake(2, { gasLimit: 30000000000 })
+    ).wait();
 
     //const newBalance = await tud.balanceOf(user1.address);
     //console.log({ newBalance });
@@ -95,11 +96,9 @@ describe("Mixer tests", () => {
     //const stakedBalance = await operator.stakingBalance(user1.address);
     //console.log({ stakedBalance });
 
-
-
-    await (await mixer.connect(user1).mix2(6)).wait();
+    await(await mixer.connect(user1).mix(4, { gasLimit: 30000000000 })).wait();
     console.log("eggs");
-/*
+    /*
     const mixed = await mixer.getMixedTokens(user1.address);
     console.log({ mixed });
 
@@ -111,5 +110,55 @@ describe("Mixer tests", () => {
       console.log({ eggType });
     } */
     /**/
+  });
+  it("Only from staking", async () => {
+    const {
+      deployer,
+      tud,
+      tudsy,
+      stacking,
+      operator,
+      user1,
+      mixer,
+    } = await loadFixture(deploy);
+
+    await(
+      await operator.connect(user1).stake(2, { gasLimit: 30000000000 })
+    ).wait();
+
+    await(await mixer.connect(user1).mix(2, { gasLimit: 30000000000 })).wait();
+
+  });
+  it("Only from wallet", async () => {
+    const {
+      deployer,
+      tud,
+      tudsy,
+      stacking,
+      operator,
+      user1,
+      mixer,
+    } = await loadFixture(deploy);
+
+    await(await mixer.connect(user1).mix(2, { gasLimit: 30000000000 })).wait();
+
+  });
+  it("All", async () => {
+    const {
+      deployer,
+      tud,
+      tudsy,
+      stacking,
+      operator,
+      user1,
+      mixer,
+    } = await loadFixture(deploy);
+
+    await(
+      await operator.connect(user1).stake(35, { gasLimit: 30000000000 })
+    ).wait();
+
+    await (await mixer.connect(user1).mix(45,{gasLimit:30000000000})).wait();
+
   });
 });

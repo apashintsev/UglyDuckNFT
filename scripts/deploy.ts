@@ -23,6 +23,7 @@ async function main() {
     "TUD"
   );
   await tud.deployed();
+  console.log("Token TUD deployed to:", tud.address);
 
   const tudsy = await new BNFT__factory(deployer).deploy(
     deployer!.address,
@@ -32,7 +33,7 @@ async function main() {
     "TUDSY"
   );
   await tudsy.deployed();
-  console.log("Token TUD deployed to:", tud.address);
+  console.log("Token TUDSY deployed to:", tudsy.address);
 
   const operator = await new Operator__factory(deployer).deploy(
     tud!.address,
@@ -48,8 +49,8 @@ async function main() {
     stackingAddress
   );
   await mixer.deployed();
-  console.log("Token TUDSY deployed to:", operator.address);
-  
+  console.log("Mixer deployed to:", operator.address);
+
   try {
     await hre.run("verify:verify", {
       address: tud.address,
@@ -107,6 +108,11 @@ async function main() {
   } catch (e) {
     console.log(e);
   } /**/
+
+  console.log("Mixer deployed to:", mixer.address);
+  console.log("Operator deployed to:", operator.address);
+  console.log("Token TUD deployed to:", tud.address);
+  console.log("Token TUDSY deployed to:", tudsy.address);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

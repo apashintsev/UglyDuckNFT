@@ -17,6 +17,10 @@ const config: HardhatUserConfig = {
     },
   },
   networks: {
+    hardhat: {
+      allowUnlimitedContractSize: true,
+      blockGasLimit: 30000000001, // whatever you want here
+    },
     mumbai: {
       url: "https://rpc-mumbai.maticvigil.com",
       accounts: { mnemonic: mnemonic },
