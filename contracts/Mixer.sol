@@ -5,8 +5,6 @@ import "./BNFT.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import {Operator} from "./Operator.sol";
 
-import "hardhat/console.sol";
-
 ///@title Mixer
 ///@notice Contract for transfer NFTs from user to staking address
 contract Mixer is Ownable {
@@ -33,6 +31,7 @@ contract Mixer is Ownable {
         EggType egg;
     }
     mapping(address => MixItem[]) private mixed;
+    mapping(address => uint256) private mixedFromStakingCount;
 
     constructor(
         address tud_,
@@ -56,8 +55,14 @@ contract Mixer is Ownable {
     ///@notice This function is calling  when user wants mix their TUD and TUDSY NFTs
     ///@param count NFT for stake count, both TUD and TUDSY
     function mix(uint256 count) external {
-        uint256 tudStakedCount = operator.stakingBalance(msg.sender) -
-            mixed[msg.sender].length;
+        uint256 tudStakedCount = operator.stakingBalance(msg.sender);
+
+        if (mixedFromStakingCount[msg.sender] > 0) {
+            tudStakedCount = tudStakedCount > mixedFromStakingCount[msg.sender]
+                ? tudStakedCount - mixedFromStakingCount[msg.sender]
+                : 0;
+        }
+
         uint256 tudOnWallet = tud.balanceOf(msg.sender);
         if (count > tudStakedCount + tudOnWallet) {
             revert("Not enought TUD");
@@ -69,12 +74,12 @@ contract Mixer is Ownable {
             ? count - tudStakedCount
             : 0;
         Operator.StakeItem[] memory tuds = operator.getStakedTokens(msg.sender);
-        uint256 addFromStakingCount = tuds.length >= count
+        uint256 addFromStakingCount = tuds.length - mixedFromStakingCount[msg.sender] >= count
             ? count
-            : tuds.length;
+            : tuds.length - mixedFromStakingCount[msg.sender];
         _mix(
             tuds,
-            mixed[msg.sender].length == 0 ? 0 : mixed[msg.sender].length - 1,
+            mixedFromStakingCount[msg.sender]>0?mixedFromStakingCount[msg.sender]-1:0,
             addFromWalletCount,
             addFromStakingCount
         );
@@ -94,6 +99,7 @@ contract Mixer is Ownable {
         if (mixed[msg.sender].length == 0) {
             mixers.push(msg.sender);
         }
+        mixedFromStakingCount[msg.sender] += tudFromStaking;
         for (uint16 i = 0; i < tudFromStaking; ) {
             uint256 idx = uint256(
                 keccak256(abi.encodePacked(block.timestamp))
@@ -104,6 +110,7 @@ contract Mixer is Ownable {
             mixed[msg.sender].push(
                 MixItem(tudsyId, tuds[tudStartIndex + i].nftId, egg)
             );
+
             emit Mixed(msg.sender, tuds[tudStartIndex + i].nftId, tudsyId, egg);
             unchecked {
                 ++i;
@@ -141,11 +148,20 @@ contract Mixer is Ownable {
         return EggType.PLATINUM;
     }
 
-    ///@notice user`s balance of staked tokens
+    ///@notice user`s balance of mixed tokens both from staking and wallet
     ///@param user address of user
     ///@return NFTs at stake count
     function mixedBalance(address user) public view returns (uint256) {
         return mixed[user].length;
+    }
+
+    ///@notice user`s balance of staked tokens
+    ///@param user address of user
+    ///@return NFTs at stake count
+    function mixedBalanceFromStaking(
+        address user
+    ) public view returns (uint256) {
+        return mixedFromStakingCount[user];
     }
 
     ///@notice user`s mixed tokens
